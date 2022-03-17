@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
+using System.Security.Cryptography.Xml;
 
 namespace xmlers
 {
@@ -192,8 +193,18 @@ namespace xmlers
             Stream stm = null;
             try
             {
-                fs = new FileStream(fname, FileMode.Open, FileAccess.Read);                
-                return hashalgo.ComputeHash(fs); // ハッシュ計算
+                fs = new FileStream(fname, FileMode.Open, FileAccess.Read);
+                if (fname.ToLower().EndsWith(".xml"))  // 正規化あり
+                {
+                    XmlDsigC14NTransform trans = new XmlDsigC14NTransform(false); // not include comment
+                    trans.LoadInput(fs);
+                    stm = (Stream)trans.GetOutput(typeof(Stream));
+                    return hashalgo.ComputeHash(stm); // ハッシュ計算
+                }
+                else   // 正規化なし
+                {
+                    return hashalgo.ComputeHash(fs); // ハッシュ計算
+                }
             }
             catch (Exception ex)
             {
